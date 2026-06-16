@@ -2,16 +2,22 @@
 title: 비동기 결제 승인 (Async Payment Approval)
 tags: [payment, architecture, async]
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-16
 sources:
+  - raw/2025-12-03-decision-sdk-v1-scope.md
   - raw/2026-03-04-meeting-payment-arch-kickoff.md
   - raw/2026-05-20-troubleshooting-pg-timeout.md
+  - raw/slack/2024-07-12-v1-launch-prep.md
+  - raw/slack/2025-12-01-sdk-v1-release.md
   - raw/pr/pr-133-polling-worker.md
   - raw/pr/pr-156-bulkhead-worker-pools.md
   - raw/transcripts/2026-03-04-kickoff-transcript.md
 source_hashes:
+  - 1fd8c16543e547f1bef940c1feaa0b3a518a4955
   - 8e1412ee09e88672e56cea0b25198cd3cf5ead1e
   - d45b1fae55627009672630ea4c604a6160ed16e5
+  - 4462dc8b370682cd0774e46208280840507b65e2
+  - 28d4d2bc531f8276c93fba0d8d508be16d8efa6e
   - 4551b34533dfd21264009b16a502efa6b6b7ffe4
   - 5cbd1fc330ed2e503c804520ef7c150c066c7f16
   - d46f73f32dfdf8b92fa81f9a9ec12e8eb6ae5e9d
@@ -30,6 +36,11 @@ Nimbus Pay는 결제 승인을 비동기로 처리한다. API는 즉시 `PENDING
 ### 폴링 워커 (PR-133)
 - PENDING 10분 초과 결제를 PG에 재조회해 동기화. **PG가 진실의 원천(source of truth)** — PG가 승인이면 APPROVED로 올리고 웹훅 발송.
 - 폴링 1분 주기, 토스 조회 rate limit(분당 600건) 내에서 백프레셔로 조절.
+
+### 클라이언트 경험 — v1 런칭과 SDK가 폴링을 감싼 과정
+- **2024-07-12 최초 v1 런칭:** 출시 막판엔 비동기조차 없었다. 토스 SDK `approve()`를 **동기 호출**해 MySQL에 결제 레코드를 바로 insert하는 단순 구조로 갔고, PG 추상화·멱등성·재시도/웹훅은 첫 가맹점 한 곳뿐이라 백로그로 미루고 출시를 우선했다. 비동기 PENDING 모델은 이후의 진화다. ([[payment-gateway-abstraction]])
+- **2025-12-03 SDK v1 스코프 확정:** 비동기 모델이 자리잡자 가맹점이 직접 다뤄야 하는 폴링 부담이 문제로 떠올랐다. 가맹점 연동 부담을 줄이려 결제 SDK v1을 **JS SDK로 한정**하고, **결제 호출 + 결과 폴링을 래핑**하기로 확정. 멱등 키 자동생성은 기본 on(권장)이되 강제는 아니며, SDK를 우회한 직접 API 호출 경로는 막지 않기로 했다.
+- **2025-12-01 SDK v1 배포:** 가맹점의 헤더·파라미터 실수를 줄이려 결제 요청과 결과 폴링을 감싼 `@nimbuspay/sdk` 1.0.0을 배포. SDK가 `Idempotency-Key`용 UUID를 자동 생성해 붙여주며, 강제 대신 권장으로 깔고 채택률을 본 뒤 강제 여부를 판단하기로 했다(이후 2026 멱등성 정비에서 SDK 키 강제로 이어짐). ([[idempotency]])
 
 ### 워커 격리 (2026-05-20 트러블슈팅 → PR-156)
 결제 승인 워커와 웹훅 재전송 워커가 같은 스레드풀을 공유하면, 웹훅 폭주 시 결제 승인이 굶는다(INC 수준 지연). 해결책으로 두 워커풀을 **분리(bulkhead 패턴)**하고 결제 승인에 우선순위를 줬다.

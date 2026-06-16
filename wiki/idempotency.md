@@ -4,6 +4,8 @@ tags: [payment, idempotency, reliability]
 created: 2026-06-12
 updated: 2026-06-16
 sources:
+  - raw/pr/pr-061-idempotency-redis-setnx.md
+  - raw/slack/2025-05-12-idempotency-v1-redis-plan.md
   - raw/2026-03-11-decision-idempotency-key-client.md
   - raw/2026-04-22-incident-duplicate-charge.md
   - raw/2026-04-29-decision-idempotency-db-unique.md
@@ -20,6 +22,8 @@ sources:
   - raw/transcripts/2026-04-23-inc204-postmortem-transcript.md
   - raw/transcripts/2026-04-29-idempotency-v2-transcript.md
 source_hashes:
+  - 8c4814e1eb0d4e1c89e9ac126a65412f5c282576
+  - a13bff40cec9f498295c7258f4e2f860c09fd87d
   - 10620d1cdbf895c572754fa29a133e775f28c033
   - 35908695e477a83f6de25a0ad09d4e912124c790
   - ffc1d104e7f604383e6dd36eced7eec0706f140b
@@ -31,8 +35,8 @@ source_hashes:
   - cb1e4a147cf3b376e15047f536cad94648e6e95b
   - 7d9842ac8c25cc21f9432751bc666b07dec8f01e
   - 920892c2c84ba0acec607e1fa41e4b83b71a184b
-  - 08a7fe48f87d1bcf33c3066ece5743e377619268
   - df185ec85e8e0476de45ef8e3d883520718c6309
+  - 08a7fe48f87d1bcf33c3066ece5743e377619268
   - 749625389b82f5c1ba0b090b2946c3f0c73cef07
   - c706699307b03bd1ff3983fcb47e4e53faa102a3
 ---
@@ -52,7 +56,9 @@ source_hashes:
 - Redis 조회 실패 시 **fail-closed**(거부 후 클라 재시도). 결제 경로에서 통과시키지 않는다. ([[fail-closed-principle]])
 
 ### 결정 히스토리 (왜 바뀌었나 — 신입 필독)
-- **2026-03-11 최초 결정:** 멱등성 = Redis 단독 저장. 클라가 UUID 키를 보내고 서버는 Redis에 응답을 24h 캐시. 서버 생성 키·자연 키(주문ID+금액) 방식은 정당한 재결제를 구분 못 해 탈락했다.
+- **2025-05-12 기술적 기원 (Redis v1 계획):** 사실 멱등성의 첫 구현은 2026-03-11 결정보다 거의 1년 앞선다. 당시 클라가 보내기만 하고 활용 안 되던 `Idempotency-Key`를 살려, approve 진입부에서 키로 **Redis SETNX**를 시도해 신규면 정상 처리·기존 키면 409로 거절하는 v1을 빠르게 도입하기로 했다. TTL 6h, 키 포맷 `idem:{key}`, 결과 캐싱은 보류하고 중복 차단만 우선, 기존 Redis 인프라 재사용. ([[redis-introduction]])
+- **2025-05 최초 구현 (PR-061):** `SET NX EX 600` 기반 미들웨어 1차를 머지. 키는 클라 `X-Idempotency-Key` 헤더 우선, 없으면 `order:` prefix를 붙인 order_id로 폴백. Redis 에러/타임아웃 시 결제 손실을 막으려 **fail-open(통과)**하고 `idem_redis_error_total` 메트릭으로 통과 빈도를 관측했다 — 이 fail-open이 2026 INC-204의 먼 뿌리다.
+- **2026-03-11 재정비 결정:** 멱등성 = Redis 단독 저장(응답 24h 캐시)으로 정식화. 클라가 UUID 키를 보내는 방식을 공식 채택하고, 서버 생성 키·자연 키(주문ID+금액) 방식은 정당한 재결제를 구분 못 해 탈락했다. v1의 SETNX 차단 위에 응답 재생 캐싱을 더한 셈.
 - **2026-03-15 fail-open의 기원 (PR-112):** 미들웨어 구현 리뷰에서 "Redis 타임아웃 시?"가 쟁점이 됐고, 도현(테크리드)이 "결제 못 받는 손실이 더 크다"며 **fail-open(통과)을 결정**했다. 서연의 고민 표명, 준호의 중복 결제 우려가 리뷰에 기록돼 있다 — 한 달 뒤 INC-204로 뒤집힌 판단의 원점.
 - **2026-04-21 INC-204 장애:** 프로모션 트래픽(사전 경고 있었음)으로 Redis 지연 → 멱등성 조회 타임아웃 → fail-open으로 87건 중복 청구. 슬랙 실시간 스레드에서 서연이 fail-open 코드를 발견했고 도현이 본인 결정임을 즉석 인정, 당일 fail-closed 핫픽스(PR-140) 배포.
 - **2026-04-23 포스트모템:** blameless 회고에서 도현이 PR-112 결정을 공식 인정. "결제 경로 외부 의존은 fail-closed 기본" 원칙과 DB 이중화 안이 확정됨.
@@ -84,3 +90,4 @@ source_hashes:
 - [[postgresql-choice]] — DB 유니크 제약이 멱등성의 최종 방어선인 이유
 - [[webhook-delivery]] — event_id 기반 웹훅 수신 멱등성
 - [[refund-flow]] — 같은 멱등 가드 패턴이 적용될 Q3 과제
+- [[redis-introduction]] — 멱등성 v1 SETNX의 기반이 된 Redis 인프라

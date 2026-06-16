@@ -2,23 +2,27 @@
 title: 웹훅 전송 (Webhook Delivery)
 tags: [payment, webhook, integration]
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-16
 sources:
   - raw/2026-03-18-decision-webhook-retry-policy.md
   - raw/2026-05-06-decision-webhook-hmac-signature.md
+  - raw/pr/pr-074-webhook-sender-v1.md
   - raw/pr/pr-118-webhook-sender-backoff.md
   - raw/pr/pr-121-dead-letter-table.md
   - raw/pr/pr-148-hmac-signature.md
   - raw/pr/pr-159-secret-rotation-api.md
+  - raw/slack/2025-08-18-webhook-v1-design.md
   - raw/slack/2026-05-02-webhook-secret-storage.md
   - raw/slack/2026-05-07-hmac-encoding-issue.md
 source_hashes:
   - 90bb7e15214edf042b29cb6be352e42339118591
   - a6282a95f50214930b843f44ad1b6f1689a8f2b5
+  - 37caabde6274c792e260aab378b7fe2749b885ff
   - a8bf7e8890923a168b5fb72de14b412d778f1148
   - df6c04ab3240dc98977102bd5b59aa813e1eff33
   - b34ad27caa64ec7e7f16b2686fbdba8555ceea8a
   - 64ce65e552813c17418e9a9d1714ec7fc396eb08
+  - 972b6ee514ad67988a2a0fd1bd7db2897d371f72
   - 84dd3cddac86193967eec8758a0ea5ce561eb01e
   - c986fcdf9329e6add09d9fc8bf7bb9f1c2700675
 ---
@@ -29,6 +33,12 @@ source_hashes:
 Nimbus Pay는 결제 결과를 가맹점 서버로 웹훅 전송한다. 가맹점 인프라 불안정에 대비해 지수 백오프 재시도(최대 6회)와 dead letter를 두고, 위조 방지를 위해 HMAC-SHA256 서명을 붙인다.
 
 ## Details
+
+### 웹훅 v1의 기원 — fire-and-forget (2025-08, PR-074)
+오늘의 재시도/dead letter 정책은 처음부터 있던 게 아니라 **재시도 없는 v1의 한계를 메운 것**이다.
+- **2025-08-18 v1 설계:** 가맹점의 폴링 부담을 줄이려 결제 승인/취소 확정 시 등록 URL로 POST 1회를 쏘는 웹훅 v1을 설계했다. 재시도·dead letter·서명은 MVP라 의도적으로 생략(**fire-and-forget**)하되, ① 폴링은 절대 죽이지 않고 ② 안내에 "참고용, getStatus 검증 필수"를 명시하는 두 전제를 깔았다. ([[async-payment-approval]])
+- **2025-08 구현 (PR-074):** approve/cancel 직후 가맹점 endpoint로 **단일 HTTP POST 1회**를 보내는 발송기 v1을 머지. 재시도·dead letter·서명은 범위 밖(TODO 주석으로 표시)이었고, non-2xx 시 merchant_id/endpoint/status code 로깅과 connect/read 각 5s 타임아웃만 갖춘 MVP였다.
+- **연결고리:** 이 "재시도/dead letter 부재"가 곧 2026-03-17 가맹점 A 웹훅 유실 사고의 토양이 됐다. 가맹점 서버가 500을 반환했는데 재시도가 없어 이벤트가 그대로 유실됐고, 그 사고가 아래 2026-03-18 재시도 정책 결정을 직접 촉발했다.
 
 ### 재시도 정책 (2026-03-18, 구현 PR-118)
 - 지수 백오프: 즉시 → 1m → 5m → 30m → 2h → 6h (최대 6회) + **각 간격 ±20% jitter** (가맹점 복구 직후 재시도 폭주 = thundering herd 방지).
