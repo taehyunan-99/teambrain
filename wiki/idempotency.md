@@ -2,7 +2,7 @@
 title: 멱등성 (Idempotency)
 tags: [payment, idempotency, reliability]
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-16
 sources:
   - raw/2026-03-11-decision-idempotency-key-client.md
   - raw/2026-04-22-incident-duplicate-charge.md
@@ -16,6 +16,7 @@ sources:
   - raw/slack/2026-03-13-redis-ttl-question.md
   - raw/slack/2026-04-21-inc204-realtime.md
   - raw/slack/2026-06-10-idem-ttl-48h-proposal.md
+  - raw/slack/2026-06-15-idem-ttl-48h-approved.md
   - raw/transcripts/2026-04-23-inc204-postmortem-transcript.md
   - raw/transcripts/2026-04-29-idempotency-v2-transcript.md
 source_hashes:
@@ -30,6 +31,7 @@ source_hashes:
   - cb1e4a147cf3b376e15047f536cad94648e6e95b
   - 7d9842ac8c25cc21f9432751bc666b07dec8f01e
   - 920892c2c84ba0acec607e1fa41e4b83b71a184b
+  - 08a7fe48f87d1bcf33c3066ece5743e377619268
   - df185ec85e8e0476de45ef8e3d883520718c6309
   - 749625389b82f5c1ba0b090b2946c3f0c73cef07
   - c706699307b03bd1ff3983fcb47e4e53faa102a3
@@ -62,8 +64,10 @@ source_hashes:
 - 동시 도착한 같은 키의 둘째 요청은 1차 처리 중이면 409 "processing" → 잠시 후 재시도.
 - SDK는 **"요청 객체 = 멱등성 단위"** 의미론: 같은 객체 재시도 = 같은 키, 새 객체 = 새 결제. 가맹점 개발자 혼동 1순위라 문서에 예제 명시. SDK 미사용 직접호출 가맹점 2곳은 2주 유예 후 키 없으면 400.
 
-### 미결 사안 (2026-06 기준)
-- **TTL 24h 엣지:** 3/13에 "확률 낮으니 보류"했던 'TTL 만료 후 같은 키 재시도' 케이스가 6/10 실측 7건(가맹점 배치 재처리 패턴)으로 재부상. DB 유니크가 막아 사고는 아니나 캐시 미스로 409 혼란 → **TTL 48h 제안, Redis 메모리 추산 후 결정 예정.**
+### TTL 24h → 48h (2026-06-15 승인)
+- 3/13에 "확률 낮으니 보류"했던 'TTL 만료 후 같은 키 재시도' 케이스가 6/10 실측 7건(가맹점 배치 재처리 패턴)으로 재부상. DB 유니크가 막아 사고는 아니나 캐시 미스로 409 혼란 → TTL 48h 제안.
+- **2026-06-15 승인:** Redis 메모리 추산 결과 일평균 약 32만 개 키 기준 피크 메모리 +12%로 여유분 내 감당 가능. 김도현 승인. `idem:{key}` TTL 상수 한 줄(24h→48h) 변경, 다음 배포 포함.
+- **DB 유니크는 영구 그대로:** Redis는 응답 재생 캐시라 48h로 늘리지만, DB 유니크는 최종 방어선이라 손대지 않는다. 48h 연장의 목적은 가맹점 다음날 배치 재처리 시 캐시 미스로 인한 409를 없애는 것.
 
 ### 적용 지점
 - 결제 승인: 클라 키 + Redis/DB 2중 가드.

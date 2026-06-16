@@ -81,3 +81,12 @@
 - [UPDATE] fail-closed-principle — PR-112 기원 서사, 도메인 의존 개념, 적용 사례 확대
 - [UPDATE] index.md — 10개 개념 카탈로그
 - 잡담 2건(회식·키보드)은 소스 요약에 '개념 없음' 처리. dangling 없음 목표
+
+## 2026-06-16 빌드 (증분 — dirty 2건)
+
+- [NEW] wiki/sources/slack/2026-06-15-idem-ttl-48h-approved.md — 소스 요약 생성
+- [NEW] wiki/sources/2026-06-16-decision-multi-pg-routing.md — 소스 요약 생성
+- [UPDATE] wiki/idempotency.md — 머지 갱신: TTL 24h→48h 승인 반영 (sources: raw/slack/2026-06-15-idem-ttl-48h-approved.md)
+- [UPDATE] wiki/payment-gateway-abstraction.md — 머지 갱신: 멀티 PG 라우팅 Q3 착수 결정 반영 (sources: raw/2026-06-16-decision-multi-pg-routing.md)
+- [UPDATE] index.md — auto 마커 영역 갱신 (idempotency·payment-gateway-abstraction 상태 문구)
+- [SKIP:변경없음] raw/* (위 2건 외 전부) — git untracked 아님 + source_hash 일치
