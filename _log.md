@@ -90,3 +90,42 @@
 - [UPDATE] wiki/payment-gateway-abstraction.md — 머지 갱신: 멀티 PG 라우팅 Q3 착수 결정 반영 (sources: raw/2026-06-16-decision-multi-pg-routing.md)
 - [UPDATE] index.md — auto 마커 영역 갱신 (idempotency·payment-gateway-abstraction 상태 문구)
 - [SKIP:변경없음] raw/* (위 2건 외 전부) — git untracked 아님 + source_hash 일치
+
+## 2026-06-16 19:44 빌드 (Phase 1 백본 더미 — infra·settlement·slack·transcript·pr 74+건)
+
+- 변경 감지: NEW raw 76건 (source_hash 대조 — 기존 23 source 일치 스킵, 불일치 0)
+
+### 소스 요약 (2단계) — 76건 신규 생성
+- [NEW] wiki/sources/infra/** — 22건 (베이스라인·컨테이너화·Redis도입/eviction·MySQL HA·HPA·프로모션·관측성)
+- [NEW] wiki/sources/settlement/** — 24건 (수기엑셀→일배치→자동지급→복합유니크→명세서 진화사)
+- [NEW] wiki/sources/slack/** — 21건 (PG종속·멱등v1·페일오버·SDK·리플랫폼·redis정책)
+- [NEW] wiki/sources/transcripts/** — 2건 (비동기승인 리뷰·기술부채 리뷰)
+- [NEW] wiki/sources/pr/** — 2건 (idempotency-redis-setnx, webhook-sender-v1)
+- [NEW] wiki/sources/(루트) — 4건 (payment-v1-scope·pg-abstraction-defer·mysql-failover·sdk-v1-scope)
+- [SKIP:변경없음] 기존 source 23건 — source_hash 일치
+
+### 개념 합성 (3단계)
+- [NEW] wiki/infra-baseline.md — 인프라 베이스라인·관측성 대시보드
+- [NEW] wiki/kubernetes-migration.md — 컨테이너화·CI → 관리형 K8s 무중단 컷오버
+- [NEW] wiki/redis-introduction.md — 관리형 Redis 사내 표준화
+- [NEW] wiki/redis-eviction-policy.md — noeviction→volatile-lru (정책값 변천 시간순 서술)
+- [NEW] wiki/autoscaling-hpa.md — 결제 API HPA 도입
+- [NEW] wiki/mysql-ha-failover.md — 관리형 MySQL HA/백업/페일오버 (인프라 관점)
+- [NEW] wiki/promo-capacity-planning.md — 프로모션 3배 트래픽 용량 계획
+- [UPDATE] wiki/idempotency.md — Redis SETNX v1 기원 보강 (sources: pr-061, idem-v1-redis-plan)
+- [UPDATE] wiki/payment-gateway-abstraction.md — 추상화 보류 전사 (sources: pg-abstraction-defer, toss-maintenance-outage, pg-vendor-lockin-risk)
+- [UPDATE] wiki/async-payment-approval.md — SDK v1·v1 런칭 (sources: sdk-v1-scope, v1-launch-prep, sdk-v1-release)
+- [UPDATE] wiki/webhook-delivery.md — fire-and-forget v1 기원 (sources: pr-074, webhook-v1-design)
+- [UPDATE] wiki/settlement-batch.md — 정산 진화사 2024~2025 (sources: 18건 — 수기엑셀·일배치·자동지급·복합유니크·명세서·교차멱등문의)
+- [UPDATE] wiki/fee-calculation.md — 절사 분쟁사 2025-02 (sources: pr-058, fee-rounding-dispute, fee-rounding-meeting, pr-129)
+- [UPDATE] wiki/postgresql-choice.md — MySQL 페일오버 정책·커넥션고갈 (sources: mysql-failover-policy, failover-inflight-tx, db-connection-exhaustion)
+- [UPDATE] wiki/oncall-and-alerting.md — 인프라 모니터링 기원 (sources: infra-baseline, manual-deploy-mistake, redis-maxmemory-alert)
+- [UPDATE] wiki/fail-closed-principle.md — 정산·페일오버 선례 (sources: settlement-failover-batch-safety, payout-idempotency-design)
+
+### 검증
+- wikilink dangling: 0건 (17 아티클 ↔ 17 링크 타깃 완전 일치)
+- frontmatter wikilink 침범: 0건
+- source_hashes 정합성: 전수 대조 통과 (머지 시 순서 어긋난 4개 파일 재정렬 수정)
+
+### 5단계
+- [UPDATE] index.md — 인프라 섹션 신설(7개), 원칙·운영 재편, 기존 항목 요약에 전사 반영
