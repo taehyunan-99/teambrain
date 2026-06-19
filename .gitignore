@@ -2,3 +2,5 @@
 .agent-harness/
 .claude/
 docs/
+__pycache__/
+*.pyc
