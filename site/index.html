@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TeamBrain · 닮은 오답이 아닌, 진짜 결정을 찾아준다</title>
+<meta name="description" content="Nimbus Pay 24개월 슬랙로그에서 near-miss(닮은 오답)를 LLM 판단으로 가려 진짜 결정만 출처와 함께 답하는 팀 지식 위키봇.">
+
+<!-- 폰트 임베드 (AWA 방식) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/variable/woff2/SUIT-Variable.css">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip-link" href="#hero">본문 바로가기</a>
+
+<!-- ══════════ 상단 고정 네비 ══════════ -->
+<header class="nav">
+  <button class="nav__menu-btn" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="nav-links"><span></span></button>
+  <a href="#hero" class="nav__brand">
+    <span class="nav__brand-mark">TB</span>
+    <span>TeamBrain</span>
+  </a>
+  <nav class="nav__links" id="nav-links" aria-label="섹션 내비게이션">
+    <a class="nav__link" href="#hero">홈</a>
+    <a class="nav__link" href="#ordinary-day">어느 평범한 하루</a>
+    <a class="nav__link nav__link--planned" href="#auto-collect">퇴근 30분 전</a>
+    <a class="nav__link nav__link--planned" href="#auto-wiki">wiki 자동 정리</a>
+    <a class="nav__link nav__link--planned" href="#daily-broadcast">업무보고 broadcast</a>
+    <a class="nav__link" href="#divider-real">여기부터 실제</a>
+    <a class="nav__link nav__link--impl" href="#wiki-build">wiki 빌드</a>
+    <a class="nav__link nav__link--impl" href="#ask-bot">슬랙봇에 묻다</a>
+    <a class="nav__link nav__link--impl" href="#near-miss">near-miss를 가른다</a>
+    <a class="nav__link" href="#architecture">아키텍처 · repo</a>
+  </nav>
+  <a class="btn btn-secondary btn-sm nav__repo" href="https://github.com/taehyunan-99/teambrain" target="_blank" rel="noopener">
+    <span aria-hidden="true">↗</span> GitHub repo
+  </a>
+</header>
+
+<main>
+
+<!-- ══════════ 1. HERO ══════════ -->
+<section class="hero" id="hero">
+  <span class="eyebrow">Nimbus Pay · TeamBrain</span>
+  <div class="hero__company">
+    <b>Nimbus Pay</b> · 국내 PG(결제대행) 스타트업 · 24개월차 · 슬랙 6개 채널에 쌓인 결정의 흔적
+  </div>
+  <h1 class="hero__title">닮은 오답이 아닌,<br><span class="accent">진짜 결정</span>을 찾아준다</h1>
+  <p class="hero__sub">
+    그럴듯하게 닮은 오답(near-miss)이 아니라 진짜 결정 기록을 LLM 판단으로 가려 답하는 위키봇.
+    검색은 후보를 넓히는 역할만, 판별은 LLM이 본문을 읽고 한다.
+  </p>
+  <div class="hero__cta">
+    <a class="btn btn-primary btn-lg" href="#ordinary-day"><span aria-hidden="true">↓</span> 스토리 시작</a>
+    <a class="btn btn-secondary btn-lg" href="#near-miss">차별점 바로 보기</a>
+  </div>
+
+  <!-- 기술 스택 배지 (RAG 핵심 개념 = accent, 구현 스택 = 중립) -->
+  <ul class="tech-stack" aria-label="기술 스택">
+    <li class="tech-badge tech-badge--key"><span class="tech-badge__dot"></span>RAG</li>
+    <li class="tech-badge tech-badge--key"><span class="tech-badge__dot"></span>Hybrid Search</li>
+    <li class="tech-badge tech-badge--key"><span class="tech-badge__dot"></span>Embedding</li>
+    <li class="tech-badge tech-badge--key"><span class="tech-badge__dot"></span>BM25</li>
+    <li class="tech-badge tech-badge--key"><span class="tech-badge__dot"></span>Vector Search</li>
+    <li class="tech-badge tech-badge--key"><span class="tech-badge__dot"></span>RRF Reranking</li>
+    <li class="tech-badge tech-badge--impl"><span class="tech-badge__dot"></span>Local LLM (Ollama)</li>
+    <li class="tech-badge tech-badge--impl"><span class="tech-badge__dot"></span>Python</li>
+    <li class="tech-badge tech-badge--impl"><span class="tech-badge__dot"></span>SQLite · FTS5 · sqlite-vec</li>
+    <li class="tech-badge tech-badge--impl"><span class="tech-badge__dot"></span>Slack Socket Mode</li>
+  </ul>
+
+  <!-- splash 터미널 카드 -->
+  <div class="terminal reveal">
+    <div class="terminal-bar">
+      <span class="tb-dot r"></span><span class="tb-dot y"></span><span class="tb-dot g"></span>
+      <span class="tb-title">teambrain : splash</span>
+    </div>
+    <div class="terminal-body splash">
+      <div class="splash-divider">NIMBUS PAY · TeamBrain</div>
+      <div class="line t-cyan splash-logo" style="font-size:15px;font-weight:700;">┌ NIMBUS PAY ─── TeamBrain ───┐</div>
+      <div class="line t-w" style="margin:6px 0 4px;">결제 · 정산 · 인프라 &nbsp;|&nbsp; 24개월 &nbsp;|&nbsp; 슬랙 6채널</div>
+
+      <div class="splash-team-grid">
+        <div class="splash-team"><div class="splash-team__name">결제팀</div><div class="splash-team__ch">#pay-dev / #pay-incident</div></div>
+        <div class="splash-team"><div class="splash-team__name">정산팀</div><div class="splash-team__ch">#settlement</div></div>
+        <div class="splash-team"><div class="splash-team__name">인프라팀</div><div class="splash-team__ch">#infra / #platform-announce</div></div>
+      </div>
+
+      <div class="line"><span class="t-prompt">$</span> <span class="t-w">teambrain --ask "예전에 그 커넥션 풀 터졌던 거 어떻게 해결했지?"</span></div>
+      <div class="line"><span class="t-green">✓</span> <span class="t-w">검색 top-30 → LLM이 본문 읽고 near-miss 3건 걸러냄</span></div>
+      <div class="line"><span class="t-amber">📚</span> <span class="t-w">진짜 결정만 출처와 함께 답함</span></div>
+      <div class="line t-cmt" style="margin-top:10px;">명제: 닮은 오답이 아닌 진짜 결정을 찾아주는 팀 지식 위키봇.</div>
+      <div class="line t-cmt">relevance ≠ truth : 관련성이 진실을 보장하지 못한다.</div>
+
+      <div class="splash-chips">
+        <span class="badge badge-warning-subtle"><span class="badge-dot badge-dot-warning"></span>계획 · 미구현 · 자동수집 / wiki 정리 / broadcast</span>
+        <span class="badge badge-success-subtle"><span class="badge-dot badge-dot-success"></span>구현됨 · wiki 빌드 / 슬랙봇 QA / near-miss 판별</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 2. 어느 평범한 하루 ══════════ -->
+<section class="section" id="ordinary-day">
+  <div class="section__head">
+    <h2 class="section__title">어느 평범한 하루 : 인물들이 슬랙에서 일한다</h2>
+    <span class="badge badge-neutral-subtle">배경</span>
+  </div>
+  <p class="section__narrative">
+    TeamBrain이 없던 시절의 날것의 풍경. 점심 투표·온보딩 환영 같은 잡담과 장애 스레드가 같은 화면에 뒤섞인 <strong>노이즈 환경</strong>이다. 정유진 SRE 합류 환영 대화로 인물 말투·관계를 소개하고, 곧이어 같은 사람들이 진짜 장애(커넥션풀 고갈)에 부딪힌다. 이 대화들이 나중에 wiki로 합성될 원재료다.
+  </p>
+
+  <!-- 등장인물 -->
+  <div class="cast-grid reveal" style="margin-bottom:var(--space-8)">
+    <div class="card cast-card">
+      <div class="cast-avatar" style="background:#C45B5B">SY</div>
+      <div><div class="cast-name">박서연</div><div class="cast-role">결제팀 · near-miss 발견 핵심 인물</div><div class="cast-intro">멱등성·fail-open 코드를 끝까지 파고드는 사람. INC-204에서 '키 없음=신규로 통과시켜요, fail-open이에요'를 처음 짚어냈다.</div></div>
+    </div>
+    <div class="card cast-card">
+      <div class="cast-avatar" style="background:#3367d6">DH</div>
+      <div><div class="cast-name">김도현</div><div class="cast-role">결제팀 테크리드 · 결정자</div><div class="cast-intro">fail-open/fail-closed를 직접 결정하고 핫픽스를 지휘한다. '아... 그거 그렇게 하기로 한 거 저예요' '제가 사고쳤네요'를 솔직히 말하는 리드.</div></div>
+    </div>
+    <div class="card cast-card">
+      <div class="cast-avatar" style="background:#2eb67d">JH</div>
+      <div><div class="cast-name">이준호</div><div class="cast-role">결제팀 · 배포 담당</div><div class="cast-intro">농담조로 분위기를 푸는 배포 담당. '송금은 더 조심해야죠 돈이 밖으로 나가는 거라 ㅋㅋ'.</div></div>
+    </div>
+    <div class="card cast-card">
+      <div class="cast-avatar" style="background:#6B8DB5">YJ</div>
+      <div><div class="cast-name">정유진</div><div class="cast-role">인프라팀 SRE (2024-07-08 합류)</div><div class="cast-intro">혼자 인프라를 다 짊어진 SRE. HikariPool·Redis eviction 정책을 결정하고 전사 점검을 공지한다. '인정요... db/인프라 제가 다른 일이랑 겸해서 보고있어서'.</div></div>
+    </div>
+    <div class="card cast-card">
+      <div class="cast-avatar" style="background:#C4955A">OS</div>
+      <div><div class="cast-name">오세훈</div><div class="cast-role">정산팀 (2024-09-30 합류)</div><div class="cast-intro">정산 자동화를 추진하며 결제팀에 멱등성을 교차 문의했다. '결제팀 분들 질문 하나만요 🙏 결제 중복 방지 어떻게 처리하세요?'</div></div>
+    </div>
+  </div>
+
+  <div class="card-grid card-grid--2">
+    <!-- 카드1: 환영 잡담 -->
+    <div class="reveal">
+      <div class="slack-chat__label">잡담 · 온보딩 환영</div>
+      <div class="slack-chat">
+        <div class="sc-channel"><span class="hash">#</span>pay-random <span class="topic">정유진 SRE 합류</span></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#3367d6">DH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">김도현</span></div><div class="sc-body">공지! 오늘부터 SRE로 정유진님 합류하셨습니다 🎉🎉</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#C45B5B">SY</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">박서연</span></div><div class="sc-body">오 드디어 인프라 봐주실 분이!! 환영합니다 🙌</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#2eb67d">JH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">이준호</span></div><div class="sc-body">환영합니다~ 그동안 서버 죽으면 다같이 멘붕이었는데 ㅋㅋㅋ</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#6B8DB5">YJ</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">정유진</span></div><div class="sc-body">안녕하세요 정유진입니다 🙏 첫 주는 일단 현황 파악만</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#e8912d">MJ</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">최민지</span></div><div class="sc-body">환영합니다! 점심 뭐 좋아하세요?</div></div></div>
+      </div>
+    </div>
+
+    <!-- 카드2: 진짜 장애 -->
+    <div class="reveal">
+      <div class="slack-chat__label">진짜 장애 (C6) · 2024-10-30 커넥션풀 고갈</div>
+      <div class="slack-chat">
+        <div class="sc-channel"><span class="hash">#</span>infra <span class="topic">커넥션풀 고갈 실시간</span></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#C45B5B">SY</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">박서연</span><span class="sc-time">14:02</span></div><div class="sc-body">유진님 지금 결제 승인이 자꾸 늦어져요 방금 온보딩한 가맹점 트래픽 들어오면서부터</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#C45B5B">SY</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">박서연</span><span class="sc-time">14:03</span></div><div class="sc-body"><code>HikariPool-1 - Connection is not available, request timed out after 30000ms</code></div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#6B8DB5">YJ</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">정유진</span><span class="sc-time">14:07</span></div><div class="sc-body">maximumPoolSize 지금 10으로 잡혀있는데 이거 기본값 그대로 아니에요?</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#2eb67d">JH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">이준호</span><span class="sc-time">14:08</span></div><div class="sc-body">맞아요 ㅋㅋㅋ 그냥 디폴트로 돌고 있었어요</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#3367d6">DH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">김도현</span><span class="sc-time">14:15</span></div><div class="sc-body">maximumPoolSize 30으로 올리고 connectionTimeout 30초는...5초로 줄일게요</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#2eb67d">JH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">이준호</span><span class="sc-time">14:27</span></div><div class="sc-body">p95가 8초까지 튀었었는데 지금 600ms대</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#C45B5B">SY</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">박서연</span><span class="sc-time">14:34</span></div><div class="sc-body">근데 솔직히 이런거 모니터링이랑 알람이 미리 잡혔어야 했는데</div></div></div>
+        <div class="sc-msg"><div class="sc-avatar" style="background:#6B8DB5">YJ</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">정유진</span><span class="sc-time">14:35</span></div><div class="sc-body">인정요... db/인프라 제가 다른 일이랑 겸해서 보고있어서</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 계획 구간 시작 (주황 톤) ══════════ -->
+<div class="zone-planned">
+
+<!-- ══════════ 3. 퇴근 30분 전: 자동 수집 ══════════ -->
+<section class="section" id="auto-collect">
+  <div class="section__head">
+    <h2 class="section__title">퇴근 30분 전 : 그날의 대화를 자동 수집</h2>
+    <span class="badge badge-warning-subtle"><span class="badge-dot badge-dot-warning"></span>계획 · 미구현</span>
+  </div>
+  <p class="section__narrative">
+    퇴근 30분 전, 그날의 슬랙·사내 문서를 자동 수집하는 파이프라인. <strong>아직 구현되지 않은 push(자동 broadcast) 로드맵의 1단계</strong>다. 현재는 pull(멘션→답변)만 구현됐고, 이 수집·정리·보고 broadcast 3단계는 계획이다.
+  </p>
+
+  <div class="planned-frame reveal">
+    <div class="pipeline">
+      <div class="pl-track">
+        <div class="pl-stage">
+          <div class="pl-node planned">6개 채널</div>
+          <div class="pl-cap">#pay-dev #pay-incident #settlement #infra #platform-announce #pay-random</div>
+        </div>
+        <div class="pl-arrow amber" style="--d:.0s"></div>
+        <div class="pl-stage">
+          <div class="pl-node planned">17:30 트리거</div>
+          <div class="pl-cap">그날 메시지 수집</div>
+        </div>
+        <div class="pl-arrow amber" style="--d:.4s"></div>
+        <div class="pl-stage">
+          <div class="pl-node planned">노이즈 필터</div>
+          <div class="pl-cap">점심투표·키보드 잡담 후순위</div>
+        </div>
+        <div class="pl-arrow amber" style="--d:.8s"></div>
+        <div class="pl-stage">
+          <div class="pl-node planned">신호 큐레이션</div>
+          <div class="pl-cap">결정/장애/PR/CS 신호만 후보로</div>
+        </div>
+        <div class="pl-arrow amber" style="--d:1.2s"></div>
+        <div class="pl-stage">
+          <div class="pl-node planned">raw 노트 초안</div>
+          <div class="pl-cap">사람 검수 대기</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:var(--space-6)">
+      <p class="callout__title"><span aria-hidden="true">⚠</span> 설계 메모</p>
+      <p class="callout__body">
+        현재 raw는 사람이 작성하는 읽기전용 입력. 이 자동 수집 단계는 계획 단계이며, 워커가 raw에 직접 쓰는 부작용(Phase 3 교훈)을 피하도록 <strong>초안 → 사람 검수</strong> 구조로 설계 예정.<br>
+        실측 규모 참고: raw 987→1576건으로 near-miss가 증식했고 노이즈 824건이 섞여 있다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 4. wiki 자동 정리 ══════════ -->
+<section class="section" id="auto-wiki">
+  <div class="section__head">
+    <h2 class="section__title">wiki 자동 정리 : 흩어진 대화를 한 편의 개념으로</h2>
+    <span class="badge badge-warning-subtle"><span class="badge-dot badge-dot-warning"></span>계획 · 미구현</span>
+  </div>
+  <p class="section__narrative">
+    수집된 raw 대화들이 wiki 개념 아티클 한 편으로 합성되는 과정. 여러 시점·여러 채널의 조각(PR-112 fail-open 결정 → INC-204 87건 중복청구 → fail-closed 핫픽스 → DB 유니크 2중화)이 <code>idempotency.md</code> 한 편으로 묶인다. 이것이 실제 wiki 구조와 동일하지만, <strong>'자동으로 매일 정리'되는 부분은 계획</strong>.
+  </p>
+
+  <div class="planned-frame reveal">
+    <div class="synth">
+      <!-- 왼쪽: raw 조각들 -->
+      <div class="card">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--text-secondary)">raw 조각들 (실제 sources)</div>
+        <ul class="wiki-sources" style="margin:0">
+          <li>raw/pr/pr-112-idempotency-middleware.md</li>
+          <li>raw/slack/2026-04-21-inc204-realtime.md (87건 중복청구)</li>
+          <li>raw/pr/pr-140-hotfix-fail-closed.md</li>
+          <li>raw/2026-04-29-decision-idempotency-db-unique.md</li>
+          <li>raw/slack/2026-06-15-idem-ttl-48h-approved.md</li>
+        </ul>
+      </div>
+
+      <!-- 가운데 합성 화살표 -->
+      <div class="synth__arrow">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>wiki-build<br>증분 합성</span>
+      </div>
+
+      <!-- 오른쪽: wiki 한 편 -->
+      <div class="card wiki-card">
+        <h3 class="wiki-card__title">멱등성 (Idempotency) <span class="file">wiki/idempotency.md</span></h3>
+        <div class="wiki-tags">
+          <span class="wiki-tag">#idempotency</span><span class="wiki-tag">#payment</span><span class="wiki-tag">#fail-closed</span>
+        </div>
+        <div class="wiki-card__fm">
+          <span class="k">sources:</span> pr-112 · inc204 · pr-140 · decision-db-unique · idem-ttl-48h
+        </div>
+        <div class="wiki-body">
+          클라가 <code>Idempotency-Key</code>(UUID) 전송 → 서버 2계층 가드<br>
+          <b>[1]</b> Redis 캐시 <code>idem:{key}</code> TTL 24h→48h<br>
+          <b>[2]</b> DB <code>UNIQUE(payment_idempotency.idempotency_key)</code> · 최종 방어선
+        </div>
+        <ol class="steps">
+          <li class="step"><span class="step__date">2026-03-15 · PR-112</span><div class="step__body">김도현 'Redis 타임아웃 시 결제 못 받는 손실이 더 크다' → <b>fail-open 결정</b></div></li>
+          <li class="step"><span class="step__date">2026-04-21 · INC-204</span><div class="step__body">프로모션 트래픽 → fail-open으로 <b>87건 중복 청구</b></div></li>
+          <li class="step"><span class="step__date">당일 · PR-140</span><div class="step__body">fail-closed 핫픽스 배포</div></li>
+          <li class="step"><span class="step__date">2026-04-29</span><div class="step__body">DB 유니크 2중화로 결정을 뒤집음</div></li>
+        </ol>
+        <div class="callout tip" style="margin:var(--space-3) 0 0">
+          <p class="callout__body" style="font-size:13px"><b>교훈:</b> 멱등성은 캐시가 아니라 돈이 실제 나가는 외부 부수효과 직전의 영속 저장소 유니크 제약이 최종 방어선.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 5. 업무보고 broadcast ══════════ -->
+<section class="section" id="daily-broadcast">
+  <div class="section__head">
+    <h2 class="section__title">금일 업무 현황 보고 : 슬랙으로 자동 broadcast</h2>
+    <span class="badge badge-warning-subtle"><span class="badge-dot badge-dot-warning"></span>계획 · 미구현</span>
+  </div>
+  <p class="section__narrative">
+    정리된 wiki를 바탕으로 '금일 업무 현황 보고'를 슬랙 채널에 자동으로 쏘는 모습. 이것이 <strong>push(자동 broadcast) 방식이며 현재는 Roadmap</strong>이다. 이 막을 끝으로 주황 구간이 닫히고, 다음 섹션에서 '여기부터 실제 동작' 전환선이 온다.
+  </p>
+
+  <div class="planned-frame reveal" style="max-width:740px;margin:0 auto">
+    <div class="slack-chat">
+      <div class="sc-channel"><span class="hash">#</span>platform-announce <span class="topic">전사 공지 · TeamBrain 연결됨</span></div>
+      <div class="sc-msg">
+        <div class="sc-avatar" style="background:#2eb67d">TB</div>
+        <div class="sc-content">
+          <div class="sc-meta"><span class="sc-user">TeamBrain</span><span class="sc-app-badge">App</span><span class="sc-time">17:30</span></div>
+          <div class="sc-body">
+            <p class="sc-summary">📚 금일 업무 현황 보고</p>
+            <div class="sc-points">
+              <div class="sc-report-pt">
+                <span class="sc-point__text">• <b>[결제/INC-204]</b> 프로모션 트래픽으로 Redis 멱등키 조회 타임아웃 → fail-open 경로로 87건 중복 청구. 당일 fail-closed 핫픽스(PR-140) 배포 완료.</span>
+                <span class="sc-point__src">→ <span class="src-file">wiki/idempotency.md</span> · <span class="src-file">raw/slack/2026-04-21-inc204-realtime.md</span></span>
+              </div>
+              <div class="sc-report-pt">
+                <span class="sc-point__text">• <b>[인프라]</b> redis latency 스파이크 모니터링 중. eviction 정책(volatile-lru) 점검 예정.</span>
+                <span class="sc-point__src">→ <span class="src-file">wiki/redis-eviction-policy.md</span></span>
+              </div>
+              <div class="sc-report-pt">
+                <span class="sc-point__text">• <b>[정산]</b> 멱등키 (merchant_id, settlement_date) 복합 유니크 적용 논의 지속.</span>
+                <span class="sc-point__src">→ <span class="src-file">wiki/settlement-batch.md</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn" style="max-width:740px;margin:var(--space-6) auto 0">
+    <p class="callout__body">
+      push(자동 broadcast)는 Roadmap. 현재 구현된 것은 pull(멘션→답변)뿐. 아래 '여기부터 실제 동작'에서 진짜로 돌아가는 부분이 시작된다.
+    </p>
+  </div>
+</section>
+
+</div><!-- /zone-planned -->
+
+<!-- ══════════ 6. 전환선: 여기부터 실제 동작 ══════════ -->
+<section class="section section--narrow" id="divider-real">
+  <div class="divider-real reveal">
+    <div class="divider-real__line">여기부터 실제 동작</div>
+
+    <div class="zone-summary">
+      <span class="zone-pill zone-pill--planned"><span class="zone-pill__dot"></span>① 자동 수집</span>
+      <span class="zone-pill zone-pill--planned"><span class="zone-pill__dot"></span>② 자동 wiki 정리</span>
+      <span class="zone-pill zone-pill--planned"><span class="zone-pill__dot"></span>③ 업무보고 broadcast</span>
+    </div>
+    <div style="color:var(--text-tertiary);font-size:12px;font-family:var(--font-mono);margin:4px 0">계획 · 미구현 (주황)  ▲  /  ▼  구현됨 (초록)</div>
+    <div class="zone-summary">
+      <span class="zone-pill zone-pill--impl"><span class="zone-pill__dot"></span>④ wiki 빌드</span>
+      <span class="zone-pill zone-pill--impl"><span class="zone-pill__dot"></span>⑤ 슬랙봇 QA</span>
+      <span class="zone-pill zone-pill--impl"><span class="zone-pill__dot"></span>⑥ near-miss 판별</span>
+    </div>
+
+    <div class="callout tip" style="text-align:left;margin-top:var(--space-8)">
+      <p class="callout__title"><span aria-hidden="true">💡</span> 신뢰의 기준점</p>
+      <p class="callout__body">
+        지금부터 보여지는 것은 <strong>실제로 실행되는 코드</strong>다. 검색은 후보를 넓히는 역할만 하고, 판별은 LLM이 본문을 읽고 한다. 아래 출력은 모두 <code>wiki_qa.py</code>를 실제로 돌려 받은 진짜 봇 출력이다(외관만 제작).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 구현 구간 시작 (초록 톤) ══════════ -->
+<div class="zone-impl">
+
+<!-- ══════════ 7. wiki 빌드 ══════════ -->
+<section class="section" id="wiki-build">
+  <div class="section__head">
+    <h2 class="section__title">wiki 빌드 : raw에서 개념을 합성한다</h2>
+    <span class="badge badge-success-subtle"><span class="badge-dot badge-dot-success"></span>구현됨</span>
+  </div>
+  <p class="section__narrative">
+    실제로 돌아가는 첫 단계. raw 노트를 읽어 wiki 개념 아티클을 증분 합성하고 검색 인덱스(<code>docs/index.db</code>, FTS5 BM25 + sqlite-vec 384d)를 빌드한다.
+  </p>
+
+  <div class="card-grid card-grid--2">
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <span class="tb-dot r"></span><span class="tb-dot y"></span><span class="tb-dot g"></span>
+        <span class="tb-title">terminal : wiki 빌드</span>
+        <button class="tb-copy" type="button"><span aria-hidden="true">⧉</span> 복사</button>
+      </div>
+      <div class="terminal-body">
+        <div class="line"><span class="t-prompt">$</span> <span class="t-w">wiki-build</span>   <span class="t-cmt"># raw → wiki 개념 합성 (증분)</span></div>
+        <div class="line"><span class="t-green">✓</span> <span class="t-w">raw 1576건 스캔 · 변경분만 재합성</span></div>
+        <div class="line"><span class="t-green">✓</span> <span class="t-w">wiki/idempotency.md 갱신 (sources 17건 병합)</span></div>
+        <div class="line"><span class="t-green">✓</span> <span class="t-w">wiki/redis-eviction-policy.md · settlement-batch.md · refund-flow.md ...</span></div>
+        <div class="line"><span class="t-green">✓</span> <span class="t-w">index.md 최신화</span></div>
+        <div class="line t-cmt" style="margin-top:8px"># 진실 공급원은 wiki/·raw/ 마크다운. 임베딩/벡터/그래프DB 도입 충동은 멈추고 DIRECTION.md를 먼저 본다.</div>
+      </div>
+    </div>
+
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <span class="tb-dot r"></span><span class="tb-dot y"></span><span class="tb-dot g"></span>
+        <span class="tb-title">terminal : 검색 인덱스 빌드</span>
+        <button class="tb-copy" type="button"><span aria-hidden="true">⧉</span> 복사</button>
+      </div>
+      <div class="terminal-body">
+        <div class="line"><span class="t-prompt">$</span> <span class="t-w">python3 scripts/search/build_index.py</span>   <span class="t-cmt"># 루트에서 실행</span></div>
+        <div class="line"><span class="t-green">✓</span> <span class="t-w">docs/index.db 생성 (FTS5 BM25 + sqlite-vec 384d)</span></div>
+        <div class="line"><span class="t-green">✓</span> <span class="t-w">하이브리드 검색 준비 완료 (top-30 후보 → RRF 결합)</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 8. 슬랙봇에 묻다 ══════════ -->
+<section class="section" id="ask-bot">
+  <div class="section__head">
+    <h2 class="section__title">슬랙봇에 묻다 : wiki 근거로 답한다</h2>
+    <span class="badge badge-success-subtle"><span class="badge-dot badge-dot-success"></span>구현됨</span>
+  </div>
+  <p class="section__narrative">
+    pull 방식의 핵심: 팀원이 슬랙에서 <code>@TeamBrain</code>을 멘션하면 하이브리드 검색(top-30) → LLM 본문 판단 → 출처 단 답변. <strong>있으면 출처와 함께, 없으면 솔직히 거부</strong>한다.
+  </p>
+
+  <div class="card-grid card-grid--2">
+    <!-- SHOT1 found=True -->
+    <div class="reveal">
+      <div class="slack-chat__label">found=True · 추석 정산 (정상 답변)</div>
+      <div class="slack-chat">
+        <div class="sc-channel"><span class="hash">#</span>team-settlement <span class="topic">정산팀 · TeamBrain 연결됨</span></div>
+        <div class="sc-msg">
+          <div class="sc-avatar" style="background:#4a154b">JK</div>
+          <div class="sc-content"><div class="sc-meta"><span class="sc-user">정현우</span><span class="sc-time">오후 2:13</span></div><div class="sc-body">@TeamBrain 추석 연휴 정산 배치는 어떻게 처리했어?</div></div>
+        </div>
+        <div class="sc-msg">
+          <div class="sc-avatar" style="background:#2eb67d">TB</div>
+          <div class="sc-content">
+            <div class="sc-meta"><span class="sc-user">TeamBrain</span><span class="sc-app-badge">App</span><span class="sc-time">오후 2:13</span></div>
+            <div class="sc-body">
+              <p class="sc-summary">📚 추석 연휴 정산은 9/8 02:00 payout 배치로 처리됐고, 연휴 기간 누적 대기 건을 포함해 총 18,204건이 한 번에 정산됐습니다.</p>
+              <div class="sc-points">
+                <div class="sc-point"><span class="sc-point__text">• 연휴 기간에도 배치 자체는 자동 실행되도록 운영되었고, 집계 배치는 정상적으로 돌아갔습니다.</span><span class="sc-point__src">→ <span class="src-file">raw/slack/2025-09-01-settlement-weekly-0901.md</span></span></div>
+                <div class="sc-point"><span class="sc-point__text">• 송금(Payout) 단계는 은행 영업일을 기준으로 처리되어, 연휴 직후 첫 영업일에 밀린 건이 한꺼번에 처리됐습니다.</span><span class="sc-point__src">→ <span class="src-file">raw/slack/2025-09-11-chuseok-settlement-plan.md</span> · <span class="src-file">raw/slack/2025-09-14-settlement-batch-chuseok-retrospective.md</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHOT2 found=False -->
+    <div class="reveal">
+      <div class="slack-chat__label">found=False · 재택근무 규정 (거부)</div>
+      <div class="slack-chat">
+        <div class="sc-channel"><span class="hash">#</span>team-general <span class="topic">일반 · TeamBrain 연결됨</span></div>
+        <div class="sc-msg">
+          <div class="sc-avatar" style="background:#e8912d">SY</div>
+          <div class="sc-content"><div class="sc-meta"><span class="sc-user">한수영</span><span class="sc-time">오후 4:02</span></div><div class="sc-body">@TeamBrain 우리 팀 재택근무 규정이 어떻게 돼?</div></div>
+        </div>
+        <div class="sc-msg">
+          <div class="sc-avatar" style="background:#2eb67d">TB</div>
+          <div class="sc-content">
+            <div class="sc-meta"><span class="sc-user">TeamBrain</span><span class="sc-app-badge">App</span><span class="sc-time">오후 4:02</span></div>
+            <div class="sc-body"><p class="sc-refuse">🤷 문서에 해당 내용이 없습니다.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실제 데모 스크린샷 -->
+  <div class="card-grid card-grid--2" style="margin-top:var(--space-6)">
+    <figure class="card reveal" style="padding:var(--space-3)">
+      <img src="assets/imgs/demo-answer.png" alt="슬랙봇 정상 답변 스크린샷: 정현우가 추석 연휴 정산 배치를 묻자 TeamBrain이 9/8 02:00 payout 배치 18,204건 처리를 세 개 출처와 함께 답한다." loading="lazy">
+      <figcaption style="font-size:12px;color:var(--text-tertiary);margin-top:8px;font-family:var(--font-mono)">실제 wiki_qa.py 출력 · demo-answer.png</figcaption>
+    </figure>
+    <figure class="card reveal" style="padding:var(--space-3)">
+      <img src="assets/imgs/demo-refuse.png" alt="슬랙봇 거부 스크린샷: 한수영이 재택근무 규정을 묻자 TeamBrain이 '문서에 해당 내용이 없습니다'라고 답한다." loading="lazy">
+      <figcaption style="font-size:12px;color:var(--text-tertiary);margin-top:8px;font-family:var(--font-mono)">실제 wiki_qa.py 출력 · demo-refuse.png</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout tip" style="margin-top:var(--space-6)">
+    <p class="callout__title"><span aria-hidden="true">$</span> 재현 명령</p>
+    <p class="callout__body" style="font-family:var(--font-mono);font-size:13px">
+      python3 scripts/llm/wiki_qa.py "추석 연휴 정산 배치는 어떻게 처리했어?"<br>
+      python3 scripts/llm/wiki_qa.py "우리 팀 재택근무 규정이 어떻게 돼?"
+    </p>
+  </div>
+</section>
+
+<!-- ══════════ 9. near-miss를 가른다 (클라이맥스) ══════════ -->
+<section class="section" id="near-miss">
+  <div class="section__head">
+    <h2 class="section__title">near-miss를 가른다 : 닮은 오답 vs 진짜 결정</h2>
+    <span class="badge badge-success-subtle"><span class="badge-dot badge-dot-success"></span>구현됨</span>
+  </div>
+  <p class="section__narrative">
+    프로젝트의 단 하나의 진짜 차별점. '커넥션 풀 고갈'이라는 <strong>같은 토큰을 공유하는 5개 문서</strong>(진짜 C6 장애 1건 + near-miss 4건)에서, 순수 검색은 정답을 88~171위로 묻어버리지만 2단 구조(검색 top-30 → LLM 본문 판단)가 진짜 결정을 건져낸다.
+  </p>
+
+  <!-- 5개 후보 grade 리스트 -->
+  <div class="grade-list reveal" style="margin-bottom:var(--space-8)">
+    <div class="grade grade--truth">
+      <div class="grade__icon" aria-hidden="true">✅</div>
+      <div><span class="grade__tag grade__tag--truth">진짜 결정</span><div class="grade__file">2024-10-30-db-connection-exhaustion.md</div><div class="grade__desc">가맹점 온보딩 트래픽 → HikariPool max 10 고갈 → 풀 30·타임아웃 5초 핫픽스.</div></div>
+    </div>
+    <div class="grade grade--miss">
+      <div class="grade__icon" aria-hidden="true">△</div>
+      <div><span class="grade__tag grade__tag--miss">near-miss 1</span><div class="grade__file">2024-12-19-infra-ci-flaky-db-pool.md</div><div class="grade__desc">CI 테스트 환경 DB 풀 부족, 운영 장애 아님.</div></div>
+    </div>
+    <div class="grade grade--miss">
+      <div class="grade__icon" aria-hidden="true">△</div>
+      <div><span class="grade__tag grade__tag--miss">near-miss 2</span><div class="grade__file">2024-10-28-bigmerchant-onboarding.md</div><div class="grade__desc">대형 가맹점 온보딩 계획·사전 우려, 장애 전 논의.</div></div>
+    </div>
+    <div class="grade grade--miss">
+      <div class="grade__icon" aria-hidden="true">△</div>
+      <div><span class="grade__tag grade__tag--miss">near-miss 3</span><div class="grade__file">2024-10-20-infra-pool-pressure-test-plan.md</div><div class="grade__desc">HikariPool pressure test 계획, 가설 실험.</div></div>
+    </div>
+    <div class="grade grade--miss">
+      <div class="grade__icon" aria-hidden="true">△</div>
+      <div><span class="grade__tag grade__tag--miss">near-miss 4</span><div class="grade__file">2024-07-01-infra-db-connection-timeout-alert.md</div><div class="grade__desc">커넥션 timeout 알람 오탐, 'pool 크기는 여유 있었고'.</div></div>
+    </div>
+  </div>
+
+  <!-- SHOT3 봇 답변 + 실제 스크린샷 -->
+  <div class="card-grid card-grid--2">
+    <div class="reveal">
+      <div class="slack-chat__label">found=True · 묻힌 정답을 2단 구조가 건진 사례</div>
+      <div class="slack-chat">
+        <div class="sc-channel"><span class="hash">#</span>team-payment <span class="topic">결제팀 · TeamBrain 연결됨</span></div>
+        <div class="sc-msg">
+          <div class="sc-avatar" style="background:#3367d6">DH</div>
+          <div class="sc-content"><div class="sc-meta"><span class="sc-user">김도현</span><span class="sc-time">오전 11:27</span></div><div class="sc-body">@TeamBrain 결제 API 커넥션 풀 고갈 장애 어떻게 해결했어?</div></div>
+        </div>
+        <div class="sc-msg">
+          <div class="sc-avatar" style="background:#2eb67d">TB</div>
+          <div class="sc-content">
+            <div class="sc-meta"><span class="sc-user">TeamBrain</span><span class="sc-app-badge">App</span><span class="sc-time">오전 11:27</span></div>
+            <div class="sc-body">
+              <p class="sc-summary">📚 HPA 도입 시 ProxySQL/MySQL 커넥션 한도를 역산해 maxReplicas를 조정하고, 웹훅 재전송과 결제 승인 워커가 공유하던 스레드풀을 bulkhead로 분리해 해결했습니다.</p>
+              <div class="sc-points">
+                <div class="sc-point"><span class="sc-point__text">• HPA 도입 시 파드 수 × 파드당 풀 크기가 ProxySQL/MySQL 커넥션 한도를 넘지 않도록 maxReplicas를 역산해 조정했습니다.</span><span class="sc-point__src">→ <span class="src-file">pr-infra-31-hpa-config.md</span></span></div>
+                <div class="sc-point"><span class="sc-point__text">• 웹훅 재전송 작업과 결제 승인 워커가 같은 스레드풀을 쓰던 문제를 bulkhead로 분리해 격리했습니다.</span><span class="sc-point__src">→ <span class="src-file">2026-05-20-troubleshooting-pg-timeout.md</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <figure class="card reveal" style="padding:var(--space-3)">
+      <img src="assets/imgs/demo-incident.png" alt="슬랙봇 장애 해결 답변 스크린샷: 김도현이 커넥션 풀 고갈 장애 해결법을 묻자 TeamBrain이 HPA 도입과 워커풀 분리(bulkhead) 두 시점의 해결책을 출처와 함께 답한다." loading="lazy">
+      <figcaption style="font-size:12px;color:var(--text-tertiary);margin-top:8px;font-family:var(--font-mono)">실제 wiki_qa.py 출력 · demo-incident.png</figcaption>
+    </figure>
+  </div>
+
+  <!-- 측정 수치 -->
+  <div class="callout honesty" style="margin-top:var(--space-6)">
+    <p class="callout__title"><span aria-hidden="true">📊</span> 측정 : 모델 크기로 풀 문제가 아니다</p>
+    <p class="callout__body">순수 검색에선 정답이 88~171위로 묻힌다. 768d 코사인도 C3 0.527/0.523 동률·A4 역전 → 판별은 검색이 아니라 LLM 본문 읽기로 한다.</p>
+    <div class="metric-row">
+      <div class="metric"><div class="metric__val">0/6</div><div class="metric__label">recall@10 · BM25</div></div>
+      <div class="metric"><div class="metric__val">0/6</div><div class="metric__label">recall@10 · 임베딩(384d)</div></div>
+      <div class="metric"><div class="metric__val good">1/6</div><div class="metric__label">recall@10 · 하이브리드</div></div>
+    </div>
+  </div>
+
+  <!-- 돈 나가는 지점 보강 인용 -->
+  <div class="card reveal" style="margin-top:var(--space-6)">
+    <div style="font-weight:700;margin-bottom:var(--space-3)">돈이 나가는 지점 교훈 : INC-231 이중송금</div>
+    <div class="slack-chat">
+      <div class="sc-channel"><span class="hash">#</span>pay-incident <span class="topic">이중송금 실시간</span></div>
+      <div class="sc-msg"><div class="sc-avatar" style="background:#C45B5B">SY</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">박서연</span></div><div class="sc-body">명세서 생성엔 멱등키(merchant+date) 걸려있는데 송금 호출엔 가드가 없네요...</div></div></div>
+      <div class="sc-msg"><div class="sc-avatar" style="background:#3367d6">DH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">김도현</span></div><div class="sc-body">제가 사고쳤네요</div></div></div>
+      <div class="sc-msg"><div class="sc-avatar" style="background:#2eb67d">JH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">이준호</span></div><div class="sc-body">중단 완료. 이중 송금 3곳, 합계 1,840만원</div></div></div>
+      <div class="sc-msg"><div class="sc-avatar" style="background:#2eb67d">JH</div><div class="sc-content"><div class="sc-meta"><span class="sc-user">이준호</span></div><div class="sc-body">송금은 더 조심해야죠 돈이 밖으로 나가는 거라 ㅋㅋ</div></div></div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /zone-impl -->
+
+<!-- ══════════ 10. 아키텍처 · repo ══════════ -->
+<section class="section" id="architecture">
+  <div class="section__head">
+    <h2 class="section__title">아키텍처 · 차별점 요약</h2>
+    <span class="badge badge-neutral-subtle">요약</span>
+  </div>
+  <p class="section__narrative">
+    전체 흐름을 한 장으로. <strong>데이터 계층</strong>(SRC→RAW→WIKI→IDX)과 <strong>QA 계층</strong>(Q→S1→S2→A)을 두 트랙으로 그린다.
+  </p>
+
+  <!-- 범례 -->
+  <div class="zone-summary" style="justify-content:flex-start;margin-bottom:var(--space-4)">
+    <span class="zone-pill zone-pill--planned"><span class="zone-pill__dot"></span>계획 = 주황</span>
+    <span class="zone-pill zone-pill--impl"><span class="zone-pill__dot"></span>구현 = 초록</span>
+  </div>
+
+  <div class="pipeline reveal" style="padding:var(--space-6)">
+    <!-- 데이터 계층 -->
+    <div class="pl-lane pl-lane--data">
+      <div class="pl-lane__title">데이터 계층</div>
+      <div class="pl-track">
+        <div class="pl-stage"><div class="pl-node">SRC</div><div class="pl-cap">slack/meeting/PR/incident</div></div>
+        <div class="pl-arrow amber" style="--d:0s"></div>
+        <div class="pl-stage"><div class="pl-node planned">RAW</div><div class="pl-cap">사람 작성·읽기전용</div></div>
+        <div class="pl-arrow green" style="--d:.5s"></div>
+        <div class="pl-stage"><div class="pl-node impl">WIKI</div><div class="pl-cap">LLM 개념 아티클</div></div>
+        <div class="pl-arrow green" style="--d:1s"></div>
+        <div class="pl-stage"><div class="pl-node impl">IDX</div><div class="pl-cap">docs/index.db · BM25 + sqlite-vec 384d</div></div>
+      </div>
+    </div>
+    <!-- QA 계층 -->
+    <div class="pl-lane pl-lane--qa">
+      <div class="pl-lane__title">QA 계층</div>
+      <div class="pl-track">
+        <div class="pl-stage"><div class="pl-node impl">Q</div><div class="pl-cap">슬랙 멘션</div></div>
+        <div class="pl-arrow green" style="--d:.2s"></div>
+        <div class="pl-stage"><div class="pl-node impl">S1</div><div class="pl-cap">하이브리드 검색 top-30 · RRF</div></div>
+        <div class="pl-arrow green" style="--d:.7s"></div>
+        <div class="pl-stage"><div class="pl-node impl">S2</div><div class="pl-cap">LLM이 본문 읽고 사실 대조</div></div>
+        <div class="pl-arrow green" style="--d:1.2s"></div>
+        <div class="pl-stage"><div class="pl-node impl">A</div><div class="pl-cap">출처 단 답변</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout tip" style="margin-top:var(--space-6)">
+    <p class="callout__title"><span aria-hidden="true">★</span> 차별점 : 이 한 가지</p>
+    <p class="callout__body">
+      <strong>near-miss를 검색이 아닌 판단으로 가른다.</strong> relevance ≠ truth. 세컨드브레인/PKM은 입력이 깨끗하다는 전제라 near-miss 문제 자체가 없고, 일반 RAG는 'retrieval만 고치면 된다'는 프레임이라 reasoning이 사각지대다.
+    </p>
+  </div>
+
+  <div class="callout honesty">
+    <p class="callout__title"><span aria-hidden="true">⚖</span> 정직성 가드</p>
+    <p class="callout__body">
+      할루시네이션 방지(RAG 기본기)·보안용 로컬 LLM(제약 조건)은 약한 차별점이라 내세우지 않는다.
+    </p>
+  </div>
+
+  <div style="margin-top:var(--space-8)">
+    <a class="btn btn-primary btn-lg" href="https://github.com/taehyunan-99/teambrain" target="_blank" rel="noopener">
+      <span aria-hidden="true">↗</span> GitHub repo 보기
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>TeamBrain · Nimbus Pay 시나리오 데모. 진실 공급원은 <code>wiki/</code>·<code>raw/</code> 마크다운.</p>
+  <p>near-miss를 검색이 아닌 판단으로 가른다 · relevance ≠ truth</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

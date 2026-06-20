@@ -1,0 +1,24 @@
+# Netlify 정적 사이트 배포 설정 (빌드 단계 없음)
+[build]
+  publish = "site"
+  command = ""
+
+# 보안 헤더 (전 경로)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# CSS는 항상 재검증 (배포 후 즉시 반영)
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# JS는 항상 재검증
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

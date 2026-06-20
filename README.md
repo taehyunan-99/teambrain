@@ -1,5 +1,15 @@
 # TeamBrain
 
+![RAG](https://img.shields.io/badge/RAG-2단_검색→판단-4A154B)
+![Hybrid Search](https://img.shields.io/badge/Hybrid_Search-BM25_+_Vector-4A154B)
+![Embedding](https://img.shields.io/badge/Embedding-sentence--transformers_384d-611f69)
+![BM25](https://img.shields.io/badge/BM25-FTS5-611f69)
+![Vector Search](https://img.shields.io/badge/Vector_Search-sqlite--vec-611f69)
+![RRF](https://img.shields.io/badge/Reranking-RRF_k=60-611f69)
+![Local LLM](https://img.shields.io/badge/LLM-Ollama_local-5B9A6F)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![Slack](https://img.shields.io/badge/Slack-Socket_Mode-4A154B?logo=slack&logoColor=white)
+
 **닮은 오답이 아닌 진짜 결정을 찾아주는 팀 지식 위키봇.**
 
 노이즈·near-miss가 섞인 날것의 슬랙로그에서, 그럴듯하게 닮은 오답이 아니라 **진짜 결정 기록**을 판별해 답한다.<br>검색은 후보를 넓히는 역할만, **판별은 LLM이 본문을 읽고** 한다.
