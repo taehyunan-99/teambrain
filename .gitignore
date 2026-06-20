@@ -1,6 +1,8 @@
 .awa/
 .agent-harness/
 .claude/
+.agents/
+.obsidian/
 docs/
 __pycache__/
 *.pyc
