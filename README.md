@@ -6,6 +6,8 @@
 
 가상기업 Nimbus Pay가 TeamBrain을 실제로 쓰는 흐름을 시각화한 **시나리오 데모 사이트**
 
+<br/>
+
 </div>
 
 ![RAG](https://img.shields.io/badge/RAG-4A154B)
