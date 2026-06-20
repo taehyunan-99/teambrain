@@ -6,10 +6,6 @@
 
 가상기업 Nimbus Pay가 TeamBrain을 실제로 쓰는 흐름을 시각화한 **시나리오 데모 사이트**
 
-<br/>
-
-</div>
-
 ![RAG](https://img.shields.io/badge/RAG-4A154B)
 ![Hybrid Search](https://img.shields.io/badge/Hybrid_Search-4A154B)
 ![Embedding](https://img.shields.io/badge/Embedding-4A154B)
@@ -19,6 +15,10 @@
 ![Local LLM](https://img.shields.io/badge/Local_LLM-4A154B)
 ![Python](https://img.shields.io/badge/Python-4A154B)
 ![Slack](https://img.shields.io/badge/Slack-4A154B)
+
+<br/>
+
+</div>
 
 **닮은 오답이 아닌 진짜 결정을 찾아주는 팀 지식 위키봇.**
 
