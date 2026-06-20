@@ -56,3 +56,56 @@ chat(msgs, model="gemma4:12b")   # 코드 수정 없이 인자만
 ```
 
 > ⚠️ `gemma4:12b`(2026-06 신규 태그)는 Ollama ≥ 최신 버전 필요. 0.24.0에선 `brew upgrade ollama` 후 사용. e4b는 0.24.0에서 동작.
+
+---
+
+# Phase 6 — 위키 QA 슬랙봇 (검색→판단 2단)
+
+5b 결론("정답은 retrieval 아닌 reasoning") 그대로: 검색이 후보를 넓게(top-30) 떠주고,
+LLM이 본문을 읽고 판단한다. 검색은 후보 공급기, 판단은 LLM.
+
+## 파일
+
+- **`wiki_qa.py`** — 2단 파이프라인. `answer(q)` → `{found, summary, points[{text,source}], sources}`.
+  어떤 실패에서도 예외를 던지지 않고 표준 dict 반환(봇 안 죽음).
+- **`slack_bot.py`** — Socket Mode 봇. 멘션 → `wiki_qa.answer()` → "생각중" 후 답변 교체.
+- **`check_slack.py`** — 토큰/Ollama 사전점검. 봇 띄우기 전 실행.
+- **`measure_models.py`** — 모델 다운그레이드/환각 방지 측정기.
+
+## 실행
+
+```bash
+ollama serve                          # (테스트 때만 켬 — 상시 켜두면 RAM 부담)
+python3 scripts/llm/check_slack.py    # 사전점검(토큰·Ollama)
+python3 scripts/llm/slack_bot.py      # 봇 기동 (Ctrl+C 종료)
+```
+슬랙 채널에서 `@Wiki Bot 질문` 으로 멘션.
+
+## 환각 방지 (3중 + 검증)
+
+위키에 없는 내용은 지어내지 않고 "문서에 해당 내용이 없습니다"로 답한다.
+1. 후보 0건이면 LLM 호출 없이 단축.
+2. system 프롬프트가 "문서에 없으면 found=false" 강제.
+3. `points`의 `source`가 실제 검색된 후보에 없으면 그 출처를 버림(LLM이 path 지어내는 것 차단).
+4. found=true인데 근거 있는 항목이 0이면 found=false로 강등.
+
+> 측정(`docs/phase6-model-eval.json`): gemma4 e4b/e2b, qwen3:4b 3모델 모두
+> 위키에 없는 질문 4/4 차단. **환각 방지는 모델 크기와 무관하게 작동.**
+
+## 모델 선택 근거 (측정 기반)
+
+| 모델 | 속도(정답질문) | 환각방지 | 정답 recall | 결론 |
+|---|---|---|---|---|
+| gemma4 e4b(기본) | 34~50s | ✅ | A1·A2 다 찾음 | 안정성 최고 → 채택 |
+| gemma4 e2b | 8~22s(2배 빠름) | ✅ | A2 놓침(안전 실패) | 속도 우선 시 |
+| qwen3:4b | 55~75s(느림) | ✅ | A1 놓침 | 부적합 |
+
+> 속도(e4b 30~50s)는 로컬 모델의 비용일 뿐 아키텍처 한계가 아니다. `MODEL` 한 줄로
+> 클라우드(Claude API 등)로 교체하면 수초로 줄어든다 — 운영은 클라우드, 데모는 로컬.
+
+## 출력 형식
+
+볼드(`**`) 금지 — Slack은 `*별하나*`가 볼드라 `**`는 그대로 노출된다.
+`:books:` 요약 → `• 사실` + 들여쓴 `_→ 파일명_`(각 사실의 근거를 인라인으로).
+하단 출처 블록은 인라인과 중복이라 두지 않는다.
+LLM은 구조화 JSON(summary+points)만 내고, 슬랙 포맷은 코드(`format_reply`)가 조립한다.
