@@ -1,14 +1,14 @@
 # TeamBrain
 
-![RAG](https://img.shields.io/badge/RAG-2단_검색→판단-4A154B)
-![Hybrid Search](https://img.shields.io/badge/Hybrid_Search-BM25_+_Vector-4A154B)
-![Embedding](https://img.shields.io/badge/Embedding-sentence--transformers_384d-611f69)
-![BM25](https://img.shields.io/badge/BM25-FTS5-611f69)
-![Vector Search](https://img.shields.io/badge/Vector_Search-sqlite--vec-611f69)
-![RRF](https://img.shields.io/badge/Reranking-RRF_k=60-611f69)
-![Local LLM](https://img.shields.io/badge/LLM-Ollama_local-5B9A6F)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![Slack](https://img.shields.io/badge/Slack-Socket_Mode-4A154B?logo=slack&logoColor=white)
+![RAG](https://img.shields.io/badge/RAG-4A154B)
+![Hybrid Search](https://img.shields.io/badge/Hybrid_Search-4A154B)
+![Embedding](https://img.shields.io/badge/Embedding-4A154B)
+![BM25](https://img.shields.io/badge/BM25-4A154B)
+![Vector Search](https://img.shields.io/badge/Vector_Search-4A154B)
+![RRF](https://img.shields.io/badge/RRF-4A154B)
+![Local LLM](https://img.shields.io/badge/Local_LLM-4A154B)
+![Python](https://img.shields.io/badge/Python-4A154B)
+![Slack](https://img.shields.io/badge/Slack-4A154B)
 
 **닮은 오답이 아닌 진짜 결정을 찾아주는 팀 지식 위키봇.**
 
