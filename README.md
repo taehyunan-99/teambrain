@@ -9,8 +9,11 @@
 ![Local LLM](https://img.shields.io/badge/Local_LLM-4A154B)
 ![Python](https://img.shields.io/badge/Python-4A154B)
 ![Slack](https://img.shields.io/badge/Slack-4A154B)
+[![Live Demo](https://img.shields.io/badge/▶_시나리오_데모-teambrain.netlify.app-5B9A6F)](https://teambrain.netlify.app/)
 
 **닮은 오답이 아닌 진짜 결정을 찾아주는 팀 지식 위키봇.**
+
+> 🔗 **[시나리오 데모 사이트 →](https://teambrain.netlify.app/)** · 가상기업 Nimbus Pay가 TeamBrain을 실제로 쓰는 흐름을 시각화했다.
 
 노이즈·near-miss가 섞인 날것의 슬랙로그에서, 그럴듯하게 닮은 오답이 아니라 **진짜 결정 기록**을 판별해 답한다.<br>검색은 후보를 넓히는 역할만, **판별은 LLM이 본문을 읽고** 한다.
 
