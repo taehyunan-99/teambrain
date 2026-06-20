@@ -4,7 +4,7 @@
 Socket Mode라 공개 URL/포트 개방 불필요(우리가 슬랙에 WebSocket 연결을 건다).
 
 준비물(.env):
-  SLACK_BOT_TOKEN=xoxb-...   봇이 메시지 읽기/쓰기
+  SLACK_BOT_TOKEN=xoxb-...   봇이 메시지 읽기/쓰기 (+ reactions:write 스코프 — 완료 ✅ 리액션용)
   SLACK_APP_TOKEN=xapp-...   WebSocket 연결(connections:write)
 
 실행(프로젝트 루트에서): python3 scripts/llm/slack_bot.py
@@ -99,7 +99,9 @@ def handle_mention(event, say, client, logger):
     text = event.get("text", "")
     question = text.split(">", 1)[-1].strip() if ">" in text else text.strip()
     channel = event.get("channel")
-    thread_ts = event.get("thread_ts") or event.get("ts")  # 스레드로 답장
+    user = event.get("user")               # 질문자 — 완료 시 멘션해 알림
+    mention_ts = event.get("ts")           # 원 멘션 메시지 — 완료 ✅ 리액션 대상
+    thread_ts = event.get("thread_ts") or mention_ts  # 스레드로 답장
 
     if not question:
         say(text="질문을 같이 적어 멘션해 주세요. 예: `@Wiki Bot DB 커넥션 풀 고갈 어떻게 대응했어?`",
@@ -128,17 +130,27 @@ def handle_mention(event, say, client, logger):
         reply = f"⚠️ 처리 중 알 수 없는 오류가 났어요: {e}"
 
     # 3) 임시 메시지를 실제 답변으로 교체. update 실패 시 새 메시지로 폴백.
+    #    답변 머리에 질문자 멘션을 붙여 완료를 푸시 알림으로 전달.
+    posted = reply if not user else f"<@{user}> {reply}"
     try:
         if placeholder and placeholder.get("ts"):
-            client.chat_update(channel=channel, ts=placeholder["ts"], text=reply)
+            client.chat_update(channel=channel, ts=placeholder["ts"], text=posted)
         else:
-            say(text=reply, thread_ts=thread_ts)
+            say(text=posted, thread_ts=thread_ts)
     except Exception as e:
         logger.warning(f"답변 게시 실패, 재시도: {e}")
         try:
-            say(text=reply, thread_ts=thread_ts)
+            say(text=posted, thread_ts=thread_ts)
         except Exception:
             logger.exception("답변 게시 최종 실패")
+
+    # 4) 원 멘션 메시지에 완료 ✅ 리액션 — 부가 신호라 실패해도 답변엔 영향 없음.
+    #    reactions:write 스코프가 없으면 여기서 조용히 실패한다(로그만).
+    if mention_ts:
+        try:
+            client.reactions_add(channel=channel, timestamp=mention_ts, name="white_check_mark")
+        except Exception as e:
+            logger.warning(f"완료 리액션 실패(무시): {e}")
 
 
 if __name__ == "__main__":
